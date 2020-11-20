@@ -13,7 +13,7 @@ class Circle(object):
         self.y = y
         self.r = r
 
-class five_bars_writting_mechanism(object):
+class FiveBarsMechanism(object):
     def __init__(self, params, angle_unit='deg'):
         self.angle_unit = angle_unit
         
@@ -44,22 +44,38 @@ class five_bars_writting_mechanism(object):
         if not(sols):
             return None
 
-        E = max(sols, key=itemgetter(1))
-        phi = np.arcsin( (E[1]-D[1])/self.L_B)
+        E = max(sols, key=itemgetter(1)) #does not work well for some extrem positions
 
-        #G point
-        x = E[0] + self.delta * np.cos(np.pi - phi)
-        y = E[1] + self.delta * np.sin(np.pi - phi)
+        # Test flipped leg
+        V_BD = [D[0]-self.B.x, D[1]-self.B.y]
+        Eb = np.array([self.B.x, self.B.y]) + np.array(V_BD) * (self.L_B + self.R_B) / self.R_B
+        if np.arctan2(E[1], E[0]) - np.arctan2(Eb[1], Eb[0]) < 0:
+            #B leg has flipped
+            return None
+        
+        V_AC = [C[0]-self.A.x, C[1]-self.A.y]
+        Ea = np.array([self.A.x, self.A.y]) + np.array(V_AC) * (self.L_A + self.R_A) / self.R_A
+        if np.arctan2(E[1], E[0]) - np.arctan2(Ea[1], Ea[0]) > 0:
+            #A leg has flipped
+            return None
 
-        return x, y 
+        V_DE = [E[0]-D[0], E[1]-D[1]]
+        G = np.array(D) + np.array(V_DE) * (self.delta + self.L_B) / self.L_B
+
+        return G[0], G[1]
 
     
-    def inverse(self, x, y):
+    def inverse(self, x, y, solA_range=[-180, 180], solB_range=[-180, 180]):
         
         C_G = Circle(x, y, self.L_B + self.delta)
         C_B = Circle( self.B.x, self.B.y, self.R_B)
 
-        D = max(get_two_circles_intersections(C_G, C_B), key=itemgetter(0))
+        D = get_two_circles_intersections(C_G, C_B)
+        if not D:
+            return None
+
+        D = max(D, key=itemgetter(0))
+
         D = Point(D[0], D[1])
 
         C_E = Circle(x + self.delta /(self.L_B+self.delta ) * (D.x - x), 
@@ -68,14 +84,26 @@ class five_bars_writting_mechanism(object):
         
         C_A = Circle(self.A.x, self.A.y, self.R_A)
 
-        C = min(get_two_circles_intersections(C_E, C_A), key=itemgetter(0))
+        C = get_two_circles_intersections(C_E, C_A)
+        if not C:
+            return None
+        
+        C = min(C, key=itemgetter(0))
         C = Point(C[0], C[1])
 
-        theta_A = np.arccos((C.x - self.A.x) / self.R_A)
-        theta_B = np.arccos((D.x - self.B.x) / self.R_B) 
-
+        theta_A = np.arccos(min(max((C.x - self.A.x) / self.R_A, -1), 1))
+        theta_B = np.arccos(min(max((D.x - self.B.x) / self.R_B, -1), 1))
+        
+ 
         theta_A = 2*np.pi - theta_A if C.y - self.A.y < 0 else theta_A
         theta_B = -1 * theta_B if D.y - self.B.y < 0 else theta_B
+
+
+        if not(solA_range[0] <= np.rad2deg(theta_A) <= solA_range[1]):
+            return None
+        
+        if not(solB_range[0] <= np.rad2deg(theta_B) <= solB_range[1]):
+            return None
 
         if self.angle_unit == 'deg':
             return (np.rad2deg(theta_A), np.rad2deg(theta_B))
