@@ -16,19 +16,28 @@ class Circle(object):
 class FiveBarsMechanism(object):
     def __init__(self, params, angle_unit='deg'):
         self.angle_unit = angle_unit
-        
-        self.A = Point(params['A'][0], params['A'][1])
-        self.B = Point(params['B'][0], params['B'][1])
-        self.R_A = params['R_A']
-        self.R_B = params['R_B']
-        self.L_A = params['L_A']
-        self.L_B = params['L_B']
-        self.delta = params['d']
+        # params = [Ax, Ay, Bx, By, R_A, R_B, L_A, L_B, d, theta_G]
+
+        if isinstance(params,dict):
+            self.A = Point(params['A'][0], params['A'][1])
+            self.B = Point(params['B'][0], params['B'][1])
+            self.R_A = params['R_A']
+            self.R_B = params['R_B']
+            self.L_A = params['L_A']
+            self.L_B = params['L_B']
+            self.delta = params['d']
+            self.theta_G = params['theta_G']
+
+        elif isinstance(params,list):
+            self.A = Point()
+            self.B = Point()
+            self.A.x, self.A.y, self.B.x, self.B.y, self.R_A, self.R_B, self.L_A, self.L_B, self.delta, self.theta_G = params
     
     def forward(self, theta_A, theta_B):
         if self.angle_unit == 'deg':
             theta_A = np.deg2rad(theta_A)
             theta_B = np.deg2rad(theta_B)
+            theta_G = np.deg2rad(self.theta_G)
 
         C = [self.R_A * np.cos(theta_A) + self.A.x, 
             self.R_A * np.sin(theta_A) + self.A.y]
@@ -43,8 +52,15 @@ class FiveBarsMechanism(object):
 
         if not(sols):
             return None
+        
+        dist = np.sqrt((sols[0][0]-sols[1][0])**2 + (sols[0][1]-sols[1][1])**2)
 
+
+        if np.rad2deg(np.arccos(max(min(dist / 2 / max(self.L_B, self.L_A),-1),1))) > 80:
+            return None
+ 
         E = max(sols, key=itemgetter(1)) #does not work well for some extrem positions
+
 
         # Test flipped leg
         V_BD = [D[0]-self.B.x, D[1]-self.B.y]
@@ -59,18 +75,52 @@ class FiveBarsMechanism(object):
             #A leg has flipped
             return None
 
-        V_DE = [E[0]-D[0], E[1]-D[1]]
-        G = np.array(D) + np.array(V_DE) * (self.delta + self.L_B) / self.L_B
+        CE_angle = np.arctan2(E[1]-C[1], E[0]-C[0])
+        
+        #If G is a rigid body with CE
+        G = [E[0] + self.delta * np.cos(CE_angle + theta_G),
+            E[1] + self.delta * np.sin(CE_angle + theta_G)]
+
+
+        #If G is a rigid body with DE
+        # V_DE = [E[0]-D[0], E[1]-D[1]]
+        # G = np.array(D) + np.array(V_DE) * (self.delta + self.L_B) / self.L_B
 
         return G[0], G[1]
 
     
     def inverse(self, x, y, solA_range=[-180, 180], solB_range=[-180, 180]):
-        
-        C_G = Circle(x, y, self.L_B + self.delta)
-        C_B = Circle( self.B.x, self.B.y, self.R_B)
+        #If G is a rigid body with CE
 
-        D = get_two_circles_intersections(C_G, C_B)
+        theta_G = self.theta_G
+        if self.angle_unit == 'deg':
+            theta_G = np.deg2rad(self.theta_G)
+
+        r = np.sqrt(self.delta**2 + self.L_A**2 - 2*self.delta*self.L_A*np.cos(np.pi-theta_G))
+        C_G = Circle(x, y, r)
+        C_A = Circle( self.A.x, self.A.y, self.R_A)
+
+        C = get_two_circles_intersections(C_G, C_A)
+        if not C:
+            return None
+
+        C = min(C, key=itemgetter(0))
+
+        C = Point(C[0], C[1])
+
+        C_delta = Circle(x, y, self.delta)
+        C_C = Circle(C.x, C.y, self.L_A)
+
+        E = get_two_circles_intersections(C_delta, C_C)
+
+        # sould not work everywher on the space :(
+        E = min(E, key=itemgetter(1))
+        E = Point(E[0], E[1])
+
+        C_E = Circle(E.x, E.y, self.L_B)
+        C_B = Circle( self.B.x, self.B.y, self.R_B)
+        D = get_two_circles_intersections(C_E, C_B)
+
         if not D:
             return None
 
@@ -78,18 +128,31 @@ class FiveBarsMechanism(object):
 
         D = Point(D[0], D[1])
 
-        C_E = Circle(x + self.delta /(self.L_B+self.delta ) * (D.x - x), 
-                     y + self.delta /(self.L_B+self.delta ) * (D.y - y), 
-                     self.L_A)
-        
-        C_A = Circle(self.A.x, self.A.y, self.R_A)
 
-        C = get_two_circles_intersections(C_E, C_A)
-        if not C:
-            return None
+        #If G is a rigid body with DE
+        # C_G = Circle(x, y, self.L_B + self.delta)
+        # C_B = Circle( self.B.x, self.B.y, self.R_B)
+
+        # D = get_two_circles_intersections(C_G, C_B)
+        # if not D:
+        #     return None
+
+        # D = max(D, key=itemgetter(0))
+
+        # D = Point(D[0], D[1])
+
+        # C_E = Circle(x + self.delta /(self.L_B+self.delta ) * (D.x - x), 
+        #              y + self.delta /(self.L_B+self.delta ) * (D.y - y), 
+        #              self.L_A)
         
-        C = min(C, key=itemgetter(0))
-        C = Point(C[0], C[1])
+        # C_A = Circle(self.A.x, self.A.y, self.R_A)
+
+        # C = get_two_circles_intersections(C_E, C_A)
+        # if not C:
+        #     return None
+        
+        # C = min(C, key=itemgetter(0))
+        # C = Point(C[0], C[1])
 
         theta_A = np.arccos(min(max((C.x - self.A.x) / self.R_A, -1), 1))
         theta_B = np.arccos(min(max((D.x - self.B.x) / self.R_B, -1), 1))

@@ -106,7 +106,14 @@ def plot_reachable_area(results):
             edgecolor = 'red',
             fill=False, zorder=10
         ) )
+    
+    axes = plt.gca()
+    axes.set_xlim([0,120])
+    axes.set_ylim([35,150])
+    
     plt.show()
+    
+    return fig, ax
 
 def estimate_precision(mechanism, x_sampling, y_sampling, delta, angle_A_limits, angle_B_limits):
     pos_error = np.zeros([x_sampling.size, y_sampling.size])
