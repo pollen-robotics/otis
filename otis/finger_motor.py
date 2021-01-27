@@ -62,7 +62,9 @@ class FingerMotor:
         Returns:
             reachy.trajectory.TrajectoryPlayer: trajectory player that can be used to monitor the trajectory, stop it, etc
         """
-        return self.dxl_motor.goto(goal_position, duration, wait, interpolation_mode)
+        return self.dxl_motor.goto(
+            goal_position=goal_position / -self.reduction,
+            duration=duration, wait=wait, interpolation_mode=interpolation_mode)
 
     def use_static_error_fix(self, activate):
         pass
