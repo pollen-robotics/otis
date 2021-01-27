@@ -3,12 +3,13 @@ import numpy as np
 from collections import OrderedDict
 
 from reachy.parts.hand import Hand
+from reachy.parts.part import ReachyPart
 
 from .finger_motor import FingerMotor
 from .kinematics import FiveBarsMechanism
 
 
-class RightOtis(Hand):
+class RightOtis(ReachyPart):
     """RightOtis part.
 
     Args:
@@ -33,12 +34,12 @@ class RightOtis(Hand):
         #     'link-translation': [0, 0, -0.0325], 'link-rotation': [1, 0, 0],
         # }),
         ('_motor_a', {
-            'id': 3, 'offset': 180.0, 'orientation': 'direct',
-            'angle-limits': [-150, 150],
+            'id': 3, 'offset': 226.0, 'orientation': 'direct',
+            'angle-limits': [-123, 140],
         }),
         ('_motor_b', {
-            'id': 5, 'offset': 180.0, 'orientation': 'direct',
-            'angle-limits': [-150, 150],
+            'id': 5, 'offset': 57.0, 'orientation': 'direct',
+            'angle-limits': [-150, 117],
         }),
         ('motor_lift', {
             'id': 7, 'offset': 0, 'orientation': 'direct',
