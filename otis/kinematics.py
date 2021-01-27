@@ -2,8 +2,14 @@ import numpy as np
 from operator import itemgetter
 
 
-class NoSolutionError(Exception):
-    pass
+class NoFKSolutionError(Exception):
+    def __init__(self, theta_a, theta_b) -> None:
+        super().__init__(f'theta=({theta_a}, {theta_b})')
+
+
+class NoIKSolutionError(Exception):
+    def __init__(self, x, y) -> None:
+        super().__init__(f'taregt pos=({x}, {y})')
 
 
 class Point(object):
@@ -57,12 +63,12 @@ class FiveBarsMechanism(object):
         sols = get_two_circles_intersections(C_A, C_B)
 
         if sols is None:
-            raise NoSolutionError(theta_A, theta_B)
+            raise NoFKSolutionError(theta_A, theta_B)
 
         dist = np.sqrt((sols[0][0]-sols[1][0])**2 + (sols[0][1]-sols[1][1])**2)
 
         if np.rad2deg(np.arccos(max(min(dist / 2 / max(self.L_B, self.L_A), -1), 1))) > 80:
-            raise NoSolutionError(theta_A, theta_B)
+            raise NoFKSolutionError(theta_A, theta_B)
 
         E = max(sols, key=itemgetter(1))  # does not work well for some extrem positions
 
@@ -71,13 +77,13 @@ class FiveBarsMechanism(object):
         Eb = np.array([self.B.x, self.B.y]) + np.array(V_BD) * (self.L_B + self.R_B) / self.R_B
         if np.arctan2(E[1], E[0]) - np.arctan2(Eb[1], Eb[0]) < 0:
             # B leg has flipped
-            raise NoSolutionError(theta_A, theta_B)
+            raise NoFKSolutionError(theta_A, theta_B)
 
         V_AC = [C[0]-self.A.x, C[1]-self.A.y]
         Ea = np.array([self.A.x, self.A.y]) + np.array(V_AC) * (self.L_A + self.R_A) / self.R_A
         if np.arctan2(E[1], E[0]) - np.arctan2(Ea[1], Ea[0]) > 0:
             # A leg has flipped
-            raise NoSolutionError(theta_A, theta_B)
+            raise NoFKSolutionError(theta_A, theta_B)
 
         CE_angle = np.arctan2(E[1]-C[1], E[0]-C[0])
 
@@ -104,7 +110,7 @@ class FiveBarsMechanism(object):
 
         C = get_two_circles_intersections(C_G, C_A)
         if C is None:
-            raise NoSolutionError(x, y)
+            raise NoIKSolutionError(x, y)
 
         C = min(C, key=itemgetter(0))
 
@@ -124,7 +130,7 @@ class FiveBarsMechanism(object):
         D = get_two_circles_intersections(C_E, C_B)
 
         if D is None:
-            raise NoSolutionError(x, y)
+            raise NoIKSolutionError(x, y)
 
         D = max(D, key=itemgetter(0))
 
@@ -162,10 +168,10 @@ class FiveBarsMechanism(object):
         theta_B = -theta_B if (D.y - self.B.y) < 0 else theta_B
 
         if not(solA_range[0] <= np.rad2deg(theta_A) <= solA_range[1]):
-            raise NoSolutionError(x, y)
+            raise NoIKSolutionError(x, y)
 
         if not(solB_range[0] <= np.rad2deg(theta_B) <= solB_range[1]):
-            raise NoSolutionError(x, y)
+            raise NoIKSolutionError(x, y)
 
         if self.angle_unit == 'deg':
             return (np.rad2deg(theta_A), np.rad2deg(theta_B))
