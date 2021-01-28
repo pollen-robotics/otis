@@ -3,13 +3,12 @@ import numpy as np
 from collections import OrderedDict
 
 from reachy.parts.hand import Hand
-from reachy.parts.part import ReachyPart
 
 from .finger_motor import FingerMotor
 from .kinematics import FiveBarsMechanism
 
 
-class RightOtis(ReachyPart):
+class RightOtis(Hand):
     """RightOtis part.
 
     Args:
@@ -18,32 +17,35 @@ class RightOtis(ReachyPart):
     """
 
     dxl_motors = OrderedDict([
-        # ('forearm_yaw', {
-        #     'id': 14, 'offset': 0.0, 'orientation': 'indirect',
-        #     'angle-limits': [-100, 100],
-        #     'link-translation': [0, 0, 0], 'link-rotation': [0, 0, 1],
-        # }),
-        # ('wrist_pitch', {
-        #     'id': 15, 'offset': 0.0, 'orientation': 'indirect',
-        #     'angle-limits': [-45, 45],
-        #     'link-translation': [0, 0, -0.25], 'link-rotation': [0, 1, 0],
-        # }),
-        # ('wrist_roll', {
-        #     'id': 16, 'offset': 0.0, 'orientation': 'indirect',
-        #     'angle-limits': [-45, 45],
-        #     'link-translation': [0, 0, -0.0325], 'link-rotation': [1, 0, 0],
-        # }),
+        ('forearm_yaw', {
+            'id': 14, 'offset': 0.0, 'orientation': 'indirect',
+            'angle-limits': [-100, 100],
+            'link-translation': [0, 0, 0], 'link-rotation': [0, 0, 1],
+        }),
+        ('wrist_pitch', {
+            'id': 15, 'offset': 0.0, 'orientation': 'indirect',
+            'angle-limits': [-45, 45],
+            'link-translation': [0, 0, -0.25], 'link-rotation': [0, 1, 0],
+        }),
+        ('wrist_roll', {
+            'id': 16, 'offset': 0.0, 'orientation': 'indirect',
+            'angle-limits': [-45, 45],
+            'link-translation': [0, 0, 0], 'link-rotation': [1, 0, 0],
+        }),
         ('_motor_a', {
             'id': 3, 'offset': 226.0, 'orientation': 'direct',
             'angle-limits': [-123, 140],
+            'link-translation': [0, 0, 0], 'link-rotation': [0, 0, 0],
         }),
         ('_motor_b', {
             'id': 5, 'offset': 57.0, 'orientation': 'direct',
             'angle-limits': [-150, 117],
+            'link-translation': [0, 0, 0], 'link-rotation': [0, 0, 0],
         }),
         ('motor_lift', {
             'id': 7, 'offset': 0, 'orientation': 'direct',
             'angle-limits': [-150, 150],
+            'link-translation': [0, 0, 0], 'link-rotation': [0, 0, 0],
         }),
     ])
 
@@ -74,6 +76,8 @@ class RightOtis(ReachyPart):
         self.motor_a = FingerMotor(self._motor_a, self.reduction)
         self.motor_b = FingerMotor(self._motor_b, self.reduction)
         self.mechanism = FiveBarsMechanism(self.five_bars_mechanism_params)
+
+        self.otis_motors = [self.motor_a, self.motor_b, self.motor_lift]
 
     def forward(self, motor_a_pos=None, motor_b_pos=None):
         """Compute the forward kinematics of the handwriting fingers.
@@ -131,11 +135,11 @@ class RightOtis(ReachyPart):
 
     @property
     def compliant(self):
-        return all([m.compliant for m in self.motors])
+        return all([m.compliant for m in self.otis_motors])
 
     @compliant.setter
     def compliant(self, value):
-        for m in self.motors:
+        for m in self.otis_motors:
             m.compliant = value
 
     def lift(self, duration=0.5, pos=-30):
