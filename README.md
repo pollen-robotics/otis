@@ -3,7 +3,7 @@
 
 ## Software installation
 
-* From Pypi: ```pip install otis```
+* From Pypi: ```pip install reachy-otis```
 * Or from the source: ```pip install -e otis_folder```
 
 ## Fast Kinematic
