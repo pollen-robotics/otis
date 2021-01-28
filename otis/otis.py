@@ -132,7 +132,6 @@ class RightOtis(Hand):
 
         return self.mechanism.inverse(x, y)
 
-
     @property
     def compliant(self):
         return all([m.compliant for m in self.otis_motors])
