@@ -1,0 +1,194 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "consecutive-africa",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import sys\n",
+    "import otis\n",
+    "\n",
+    "otis.register()\n",
+    "\n",
+    "if sys.platform == 'linux':\n",
+    "    port = '/dev/ttyUSB*'\n",
+    "elif sys.platform == 'darwin':\n",
+    "    port = '/dev/cu.usb*'\n",
+    "else:\n",
+    "    # port = 'COMX'\n",
+    "    raise EnvironmentError('Please set the correct number for the COM port')\n",
+    "    \n",
+    "from reachy import Reachy, parts\n",
+    "\n",
+    "r = Reachy(\n",
+    "    right_arm=parts.RightArm(io=port, hand='otis')\n",
+    ")\n",
+    "\n",
+    "otis = r.right_arm.hand"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "adapted-mission",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Using matplotlib backend: MacOSX\n"
+     ]
+    }
+   ],
+   "source": [
+    "%matplotlib\n",
+    "\n",
+    "from matplotlib import pyplot as plt\n",
+    "\n",
+    "import numpy as np\n",
+    "\n",
+    "# This can be installed via pip\n",
+    "from svgpathtools import svg2paths, wsvg"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 35,
+   "id": "distinct-zambia",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def svg_to_strokes(filename):\n",
+    "    paths, attrs = svg2paths(filename, convert_rectangles_to_paths=False)\n",
+    "\n",
+    "    def pixel2mm(pix, DPI=300):\n",
+    "        return pix * 25.4 / DPI\n",
+    "\n",
+    "    strokes = []\n",
+    "\n",
+    "    for p in paths:\n",
+    "        pts = np.asarray([[np.real(p.point(x)), np.imag(p.point(x))] \n",
+    "                          for x in np.linspace(0, 1, 30 * len(p))])\n",
+    "        X = pixel2mm(pts[:, 0])\n",
+    "        Y = pixel2mm(pts[:, 1])\n",
+    "\n",
+    "        strokes.append(np.array((X, Y)).T)\n",
+    "        \n",
+    "    return strokes"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 40,
+   "id": "heated-elephant",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "svg_example_path = 'flower.svg'\n",
+    "\n",
+    "strokes = svg_to_strokes(svg_example_path)\n",
+    "\n",
+    "plt.figure()\n",
+    "for s in strokes:\n",
+    "    X, Y = s.T\n",
+    "    plt.plot(X, Y)\n",
+    "plt.gca().set_aspect('equal', adjustable='box')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 69,
+   "id": "heavy-knitting",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import time\n",
+    "\n",
+    "otis.compliant = False\n",
+    "\n",
+    "goal, real = [], []\n",
+    "\n",
+    "for s in strokes:\n",
+    "    otis.lift()\n",
+    "\n",
+    "    x, y = s[0]\n",
+    "    theta_a, theta_b = otis.inverse(x, y)\n",
+    "\n",
+    "    otis.goto(\n",
+    "        goal_positions={\n",
+    "            'motor_a': theta_a, \n",
+    "            'motor_b': theta_b\n",
+    "        }, \n",
+    "        duration=0.5,\n",
+    "        wait=True,\n",
+    "    )\n",
+    "\n",
+    "    otis.drop()\n",
+    "    \n",
+    "    for x, y in s:\n",
+    "        a, b, = otis.inverse(x, y)\n",
+    "        otis.motor_a.goal_position = a\n",
+    "        otis.motor_b.goal_position = b\n",
+    "        time.sleep(0.025)\n",
+    "    \n",
+    "        goal.append((a, b))\n",
+    "        real.append((otis.motor_a.present_position, otis.motor_b.present_position))\n",
+    "\n",
+    "otis.lift()\n",
+    "\n",
+    "goal = np.array(goal)\n",
+    "real = np.array(real)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 59,
+   "id": "chubby-ceramic",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "plt.figure()\n",
+    "\n",
+    "GX, GY = otis.forward(goal[:, 0], goal[:, 1])\n",
+    "RX, RY = otis.forward(real[:, 0], real[:, 1])\n",
+    "\n",
+    "plt.plot(GX, GY, '--')\n",
+    "plt.plot(RX, RY)\n",
+    "\n",
+    "plt.gca().set_aspect('equal', adjustable='box')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "helpful-anthony",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
