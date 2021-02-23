@@ -28,7 +28,7 @@ class RightOtis(Hand):
             'link-translation': [0, 0, -0.25], 'link-rotation': [0, 1, 0],
         }),
         ('wrist_roll', {
-            'id': 16, 'offset': 0.0, 'orientation': 'indirect',
+            'id': 16, 'offset': -15.0, 'orientation': 'indirect',
             'angle-limits': [-45, 45],
             'link-translation': [0, 0, 0], 'link-rotation': [1, 0, 0],
         }),
