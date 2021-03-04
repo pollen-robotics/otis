@@ -6,12 +6,20 @@
 * From Pypi: ```pip install reachy-otis```
 * Or from the source: ```pip install -e otis_folder```
 
-## Fast Kinematic
+## Mechanism
 
 ![](doc/representation.png)
 
-- forward: 40 µs
-- inverse: 55 µs
+Link parameters:
+- RA = 30mm
+- RB = 30mm
+- LA = 60mm
+- LB = 50mm
+- d = 15mm
+- A (40mm , 45mm)
+- B (90mm, 35mm)
+
+
 
 ## Mechanics (CAD)
 
