@@ -19,7 +19,11 @@ Link parameters:
 - A (40mm , 45mm)
 - B (90mm, 35mm)
 
+## Reacheable space
+Here is the reachable space for the otis hand (value in mm). Origin is the wrist rotation axis.
+![](doc/otis_space.jpg)
 
+A SVG file is available in /doc
 
 ## Mechanics (CAD)
 
