@@ -13,6 +13,10 @@
 - forward: 40 µs
 - inverse: 55 µs
 
+## Mechanics (CAD)
+
+You can get acces to all CAD file on our OnShape account => https://cad.onshape.com/documents/bc0741d6e41e05a3a7a83404/
+
 ## Licence
 
 The software is open-sourced and released under an [Apache License v2.0](./software/LICENSE).
