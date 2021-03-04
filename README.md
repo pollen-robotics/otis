@@ -19,6 +19,8 @@ Link parameters:
 - A (40mm , 45mm)
 - B (90mm, 35mm)
 
+The forward function is defined [here](https://github.com/pollen-robotics/otis/blob/main/otis/kinematics.py#L48) and the inverse function [here](https://github.com/pollen-robotics/otis/blob/main/otis/kinematics.py#L100)
+
 ## Reacheable space
 Here is the reachable space for the otis hand (value in mm). Origin is the wrist rotation axis.
 ![](doc/otis_space.jpg)
