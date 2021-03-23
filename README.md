@@ -1,4 +1,4 @@
-# Otis - the handwriting tool for Reachy
+# Otis - the handwriting tool for Reachy 2019
 
 
 ## Software installation
